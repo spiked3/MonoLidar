@@ -1,0 +1,1 @@
+﻿mcs -r:D:\Source\3rdPartyCode\m2mqtt\M2Mqtt\bin\Debug\M2Mqtt.dll .\MonoLidar.cs .\Program.cs
