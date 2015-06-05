@@ -55,7 +55,7 @@ namespace spiked3
                 {
                     if (di.Model == 0 && di.hardware == 0)
                     {
-                        Console.WriteLine($"Lidar Model({di.Model}, {di.hardware}), Firmware({di.FirmwareMajor}, {di.FirmwareMinor})");
+                        //Console.WriteLine($"Lidar Model({di.Model}, {di.hardware}), Firmware({di.FirmwareMajor}, {di.FirmwareMinor})");
                         return true;
                     }
                 }
