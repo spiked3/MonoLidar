@@ -8,7 +8,6 @@ using System.Text;
 using System.Timers;
 using uPLibrary.Networking.M2Mqtt;
 
-
 namespace spiked3
 {
     public class RpLidarSerial
@@ -265,12 +264,47 @@ namespace spiked3
         char[] activityChars = { '\\', '|', '/', '-'};
         void NewScanSet()
         {
-            Console.Write("\r" + activityChars[++activityIdx%activityChars.Length]);            
-            // +++ mqtt publish ScanData
-            ConsoleApplication1.Program.C.Publish("RpLidar", UTF8Encoding.ASCII.GetBytes(ScanData.ToString()));
+            Console.Write("\r" + activityChars[++activityIdx%activityChars.Length]);
+            ConsoleApplication1.Program.C.Publish("RpLidar", ToByteArray<ScanPoint>(ScanData));
         }
+
+        // +++ may consider faster unsafe method if needed
+        static byte[] ToByteArray<T>(T[] source) where T : struct
+        {
+            GCHandle handle = GCHandle.Alloc(source, GCHandleType.Pinned);
+            try
+            {
+                IntPtr pointer = handle.AddrOfPinnedObject();
+                byte[] destination = new byte[source.Length * Marshal.SizeOf(typeof(T))];
+                Marshal.Copy(pointer, destination, 0, destination.Length);
+                return destination;
+            }
+            finally
+            {
+                if (handle.IsAllocated)
+                    handle.Free();
+            }
+        }
+
+        static T[] FromByteArray<T>(byte[] source) where T : struct
+        {
+            T[] destination = new T[source.Length / Marshal.SizeOf(typeof(T))];
+            GCHandle handle = GCHandle.Alloc(destination, GCHandleType.Pinned);
+            try
+            {
+                IntPtr pointer = handle.AddrOfPinnedObject();
+                Marshal.Copy(source, 0, pointer, source.Length);
+                return destination;
+            }
+            finally
+            {
+                if (handle.IsAllocated)
+                    handle.Free();
+            }
+        }
+
     }
-    
+
     public enum LidarCommand : byte
     {
         Stop = 0x25,
@@ -343,4 +377,5 @@ namespace spiked3
         public float Distance;
         public int Quality;
     }
+
 }
