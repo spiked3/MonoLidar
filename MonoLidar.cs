@@ -15,7 +15,6 @@ namespace spiked3
         readonly string[] HealtStatusStrings = { "Good", "Poor", "Critical", "Unknown" };
 
         SerialPort Lidar;
-        bool lidarTimedOut;
         byte[] nodeBuf = new byte[5];
         int recvPos;
 
@@ -147,9 +146,7 @@ namespace spiked3
                     LidarScanData node = nodeBuf.ByteArrayToStructure<LidarScanData>(0);
                     float distance = node.Distance / 4f;
 
-                    // I couldn't tell much difference rounded v not
-                    //int angle = (int)((node.Angle >> 1) / 64.0);   
-                    int angle = (int)Math.Round(((node.Angle >> 1) / 64.0), MidpointRounding.AwayFromZero);
+                    int angle = (int)((node.Angle >> 1) / 64.0);                       
 
                     int quality = node.Quality >> 2;
                     bool startBit = (node.Quality & 0x01) == 0x01;
@@ -239,33 +236,23 @@ namespace spiked3
 
             int idx = 0;
             outBuf = new byte[expectedLength];
-            using (Timer timeoutTimer = new Timer(timeout))
+            DateTime toAt = DateTime.Now + new TimeSpan(timeout);
+            while (DateTime.Now < toAt)
             {
-                timeoutTimer.Elapsed += LidarResponseTimeoutElapsed;
-                lidarTimedOut = false;
-                timeoutTimer.Start();
-                while (!lidarTimedOut)
+                if (Lidar.BytesToRead > 0)
                 {
-                    if (Lidar.BytesToRead > 0)
+                    outBuf[idx++] = (byte)Lidar.ReadByte();
+                    if (idx >= expectedLength)
                     {
-                        outBuf[idx++] = (byte)Lidar.ReadByte();
-                        if (idx >= expectedLength)
-                        {
-				        	Console.WriteLine("  return true");
-                            return true; // timer should be auto disposed??
-                        }
+                        Console.WriteLine("  return true");
+                        return true;
                     }
-                    System.Threading.Thread.Sleep(2);
                 }
-	        	Console.WriteLine("  return false");
-                return false;
-            }
-        }
+                System.Threading.Thread.Sleep(2);
 
-        void LidarResponseTimeoutElapsed(object sender, ElapsedEventArgs e)
-        {
-            ((Timer)sender).Stop();
-            lidarTimedOut = true;
+            }
+            Console.WriteLine("  return false");
+            return false;
         }
 
         int activityIdx = 0;
