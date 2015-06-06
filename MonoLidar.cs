@@ -37,6 +37,7 @@ namespace spiked3
         {
             Console.WriteLine("RpLidarDriver::Open","2");
             Lidar = new SerialPort(comPort, 115200, Parity.None, 8, StopBits.One);
+            Lidar.DtrEnable = false;
             try
             {
                 Lidar.Open();
@@ -94,6 +95,7 @@ namespace spiked3
 
         public bool Start()
         {
+        	Console.WriteLine("::Start()");
             if (Lidar != null && Lidar.IsOpen)
             {
                 byte[] r;
@@ -111,7 +113,7 @@ namespace spiked3
 
         void LidarScanDataReceived(object sender, SerialDataReceivedEventArgs e)
         {
-            //System.Diagnostics.Console.WriteLine(string.Format("LidarScanDataReceived bytes to read  {0}", Lidar.BytesToRead));
+            Console.WriteLine(string.Format("LidarScanDataReceived bytes to read  {0}", Lidar.BytesToRead));
             while (Lidar.IsOpen && Lidar.BytesToRead > 0)
             {
                 byte currentByte = (byte)Lidar.ReadByte();
@@ -152,7 +154,7 @@ namespace spiked3
                     int quality = node.Quality >> 2;
                     bool startBit = (node.Quality & 0x01) == 0x01;
 
-                    //System.Diagnostics.Console.WriteLine(string.Format("s({0},{1}) c({2}) q({3}) a({4}) d({5})", s, s1, c, q, a, d));
+                    Console.WriteLine(string.Format("q({0}) a({1}) d({2})", node.Quality, angle, distance));
                     if (distance > 0 && angle < 360)
                     {
                         // ++++
@@ -233,6 +235,8 @@ namespace spiked3
 
         bool GetLidarResponseWTimeout(out byte[] outBuf, int expectedLength, int timeout)
         {
+        	Console.WriteLine("::GetLidarResponseWTimeout()");
+
             int idx = 0;
             outBuf = new byte[expectedLength];
             using (Timer timeoutTimer = new Timer(timeout))
@@ -246,10 +250,14 @@ namespace spiked3
                     {
                         outBuf[idx++] = (byte)Lidar.ReadByte();
                         if (idx >= expectedLength)
+                        {
+				        	Console.WriteLine("  return true");
                             return true; // timer should be auto disposed??
+                        }
                     }
                     System.Threading.Thread.Sleep(2);
                 }
+	        	Console.WriteLine("  return false");
                 return false;
             }
         }
@@ -265,7 +273,7 @@ namespace spiked3
         void NewScanSet()
         {
             Console.Write("\r" + activityChars[++activityIdx%activityChars.Length]);
-            ConsoleApplication1.Program.C.Publish("RpLidar", ToByteArray<ScanPoint>(ScanData));
+            //ConsoleApplication1.Program.C.Publish("RpLidar", ToByteArray<ScanPoint>(ScanData));
         }
 
         // +++ may consider faster unsafe method if needed
