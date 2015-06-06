@@ -112,7 +112,7 @@ namespace spiked3
 
         void LidarScanDataReceived(object sender, SerialDataReceivedEventArgs e)
         {
-            Console.WriteLine(string.Format("LidarScanDataReceived bytes to read  {0}", Lidar.BytesToRead));
+            //Console.WriteLine(string.Format("LidarScanDataReceived bytes to read  {0}", Lidar.BytesToRead));
             while (Lidar.IsOpen && Lidar.BytesToRead > 0)
             {
                 byte currentByte = (byte)Lidar.ReadByte();
@@ -151,7 +151,7 @@ namespace spiked3
                     int quality = node.Quality >> 2;
                     bool startBit = (node.Quality & 0x01) == 0x01;
 
-                    Console.WriteLine(string.Format("q({0}) a({1}) d({2})", node.Quality, angle, distance));
+                    //Console.WriteLine(string.Format("q({0}) a({1}) d({2})", node.Quality, angle, distance));
                     if (distance > 0 && angle < 360)
                     {
                         // ++++
@@ -233,11 +233,11 @@ namespace spiked3
         bool GetLidarResponseWTimeout(out byte[] outBuf, int expectedLength, int timeout)
         {
         	Console.WriteLine("::GetLidarResponseWTimeout()");
-
             int idx = 0;
             outBuf = new byte[expectedLength];
-            DateTime toAt = DateTime.Now + new TimeSpan(timeout);
-            while (DateTime.Now < toAt)
+            DateTime toAt = DateTime.Now + new TimeSpan(0,0,0,0,timeout);
+            bool timedOut = false;
+            while (!timedOut)
             {
                 if (Lidar.BytesToRead > 0)
                 {
@@ -248,8 +248,9 @@ namespace spiked3
                         return true;
                     }
                 }
-                System.Threading.Thread.Sleep(2);
-
+                System.Threading.Thread.Sleep(5);
+                if (DateTime.Now > toAt)
+                    timedOut = true;
             }
             Console.WriteLine("  return false");
             return false;
@@ -260,7 +261,7 @@ namespace spiked3
         void NewScanSet()
         {
             Console.Write("\r" + activityChars[++activityIdx%activityChars.Length]);
-            //ConsoleApplication1.Program.C.Publish("RpLidar", ToByteArray<ScanPoint>(ScanData));
+            ConsoleApplication1.Program.C.Publish("RpLidar", ToByteArray<ScanPoint>(ScanData));
         }
 
         // +++ may consider faster unsafe method if needed

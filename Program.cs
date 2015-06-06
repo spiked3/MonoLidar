@@ -20,10 +20,15 @@ namespace ConsoleApplication1
             Console.WriteLine("MQTT Connected");
 
             var l = new RpLidarSerial();
-            l.Open("/dev/ttyUSB0");
-            Console.WriteLine("Lidar Opened, starting .....");
-            Console.WriteLine("Ctl-C to quit");
-            l.Start();
+            //l.Open("/dev/ttyUSB0");
+            if (l.Open(args[0]))
+            {
+                Console.WriteLine("Lidar Opened, starting .....");
+                Console.WriteLine("Ctl-C to quit");
+                l.Start();
+            }
+
+            //C.Disconnect();
         }
     }
 }
