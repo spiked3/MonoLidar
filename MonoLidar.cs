@@ -104,6 +104,7 @@ namespace spiked3
                 if (GetLidarResponseWTimeout(out r, 7, 500))
                 {
                     sr = r.ByteArrayToStructure<LidarScanResponse>(0);
+                    Console.WriteLine("Do something else here, no serial events in Mono");
                     Lidar.DataReceived += LidarScanDataReceived; // we expect responses until we tell it to stop
                 }
             }
